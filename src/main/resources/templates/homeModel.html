@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns="http://www.thymeleaf.org">
+	
+	<head>
+		<meta charset="utf-8">
+		<script type="text/javascript" src="../static/js/axios.min.js"></script>
+		<script type="text/javascript" src="../static/js/jquery.min.js"></script>
+		<script type="text/javascript" src="../static/js/vue.min.js"></script>
+		<title>test</title>
+	</head>
+	<body>
+		<div id="websocket">
+		<input type="text" placeholder="输入要发送的消息" v-model="message" />
+		<button type="button" @click="send">发送</button>
+		<br />
+		<!-- //可以分别切换为reciveData.x,  reciveData.y -->
+		<input type="text" placeholder="显示收到的消息" v-model="reciveData.type" />
+		<button type="button" @click="refresh">刷新</button>
+		<br />
+		<button type="button" @click="matchingPlayer(12324)">玩家匹配</button>
+		<!-- <div> -->
+			<!-- <p>收到的消息:{{reciveData}}</p> -->
+		<!-- </div> -->
+		</div>
+		<script>
+			var websocket = null;
+			var userId = '12324';
+			var reciveMessage={};
+			//判断当前浏览器是否支持WebSocket
+			if('WebSocket' in window){
+				//建立连接，传入的userId必须是数字，不能是字符串
+				websocket=new WebSocket("ws://39.99.193.56:8080/socket/"+userId);
+				// websocket=new WebSocket("ws://localhost:8080/socket/"+userId);
+				//接收到消息的回调方法
+				websocket.onmessage=function(event){
+					//获得封装的messageObject
+					var messageObject=JSON.parse(event.data);
+					//获得position
+					reciveMessage=messageObject.data;
+					console.log("收到的数据"+reciveMessage);
+					//position的type，x，y
+					console.log(reciveMessage.type)
+					// alert("收到消息"+reciveMessage)
+				};
+				//连接成功建立的回调方法
+				websocket.onopen = function () {
+				     websocket.send("客户端链接成功");
+				 }								 
+				  
+				 //连接发生错误的回调方法
+				 websocket.onerror = function () {
+				     alert("WebSocket连接发生错误");
+				 };
+								 
+				//连接关闭的回调方法
+				 websocket.onclose = function () {
+				     alert("WebSocket连接关闭");
+				 }
+								 
+				 //监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
+				 window.onbeforeunload = function () {
+				     closeWebSocket();
+				 }
+			}
+			else {
+			       alert('当前浏览器 Not support websocket')
+			   }
+			var vue=new Vue({
+				el:"#websocket",
+				data:{
+					//初始化数据
+					message:'',
+					reciveData:{}
+				},
+				methods:{
+					send:function(){
+						var positions={
+							type:'euiwhfiwu123',
+							x:23,
+							y:35
+						};
+						var position=JSON.stringify(positions)
+						var url="/chess/sendMessage?enemyId="+"owd7F5LhmmvdeJDnLBzx6tGi9i_4"+"&positions="+position;
+						axios.post(url).then(function(response){
+							
+							alert("发送消息成功");
+						})
+					},
+					refresh:function(){
+						vue.reciveData=reciveMessage;
+						// this.reciveData="hello";
+						
+					},
+					matchingPlayer:function(userId){
+						var url="/chess/matching?userId="+userId;
+						axios.get(url).then(function(response){
+							var result=response.data;
+							if(result.code==200){
+								console.log("匹配成功"+result.data.userName);
+							}else{
+								console.log("匹配失败");
+							}
+						});
+					},
+					
+				}
+			});
+		
+		</script>
+	</body>
+</html>
